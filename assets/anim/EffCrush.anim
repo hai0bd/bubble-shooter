@@ -1,0 +1,55 @@
+{
+  "__type__": "cc.AnimationClip",
+  "_name": "Crush",
+  "_objFlags": 0,
+  "_native": "",
+  "_duration": 0.2,
+  "sample": 30,
+  "speed": 1,
+  "wrapMode": 1,
+  "curveData": {
+    "comps": {
+      "cc.Sprite": {
+        "spriteFrame": [
+          {
+            "frame": 0,
+            "value": {
+              "__uuid__": "96a76771-551a-4327-898f-de652e9dfe28"
+            }
+          },
+          {
+            "frame": 0.03333333333333333,
+            "value": {
+              "__uuid__": "f0877c92-aa3e-4a34-b69b-6575610f4582"
+            }
+          },
+          {
+            "frame": 0.06666666666666667,
+            "value": {
+              "__uuid__": "7e696b37-3452-4957-b4f6-a76b010b9adf"
+            }
+          },
+          {
+            "frame": 0.1,
+            "value": {
+              "__uuid__": "59ccd76c-89f6-4ec0-a37f-d63ef6ac5a49"
+            }
+          },
+          {
+            "frame": 0.13333333333333333,
+            "value": {
+              "__uuid__": "41d6c8f1-efce-4024-8c42-8e21ca239a4f"
+            }
+          },
+          {
+            "frame": 0.16666666666666666,
+            "value": {
+              "__uuid__": "1ac237fc-0c1f-41e8-bde8-6e3206d24c33"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "events": []
+}
