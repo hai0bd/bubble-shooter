@@ -1,4 +1,4 @@
-import { _decorator, Animation, color, Component, Node, tween, Vec2 } from 'cc';
+import { _decorator, Animation, AudioSource, color, Component, Node, tween, Vec2, Vec3 } from 'cc';
 import { Levels } from './../Levels';
 import { random } from "../Utils";
 import { StaticInstance } from '../StaticInstance';
@@ -28,7 +28,7 @@ export default class GameManager extends Component {
     currentLevel: any = null
     scoreNum: number = 0
     canWarning: boolean = true
-    iceTimeSoundId: number = -1
+    iceTimeSoundId: AudioSource;
 
     onLoad() {
         // 注册事件
@@ -52,31 +52,35 @@ export default class GameManager extends Component {
     onBallShoot() {
         if (DataManager.instance.readyBubbles.length <= 0) {
             // console.log('弹夹已空')
-            return
+            return;
         }
-        this.scoreNum = 0
+        this.scoreNum = 0;
         // 动改状态
-        DataManager.instance.status = ENUM_GAME_STATUS.UNRUNING
+        DataManager.instance.status = ENUM_GAME_STATUS.UNRUNING;
         // 获取泡泡
-        const data = DataManager.instance.readyBubbles.shift()
+        const data = DataManager.instance.readyBubbles.shift();
         // 移动泡泡
-        const actions = DataManager.instance.bubbleMoveActions
+        const actions = DataManager.instance.bubbleMoveActions;
         // console.log(actions)
-        if (actions.length == 1) {
-            tween(data.node).then(actions[0]).call(() => {
-                // 调整泡泡位置
-                this.onBubblePosReset(data)
-            }).start()
-        } else {
+        if (actions.length === 1) {
             tween(data.node)
-                .then(sequence(actions))
+                .then(actions[0])
                 .call(() => {
                     // 调整泡泡位置
-                    this.onBubblePosReset(data)
-                }).start()
+                    this.onBubblePosReset(data);
+                })
+                .start();
+        } else {
+            tween(data.node)
+                .then(tween().sequence(...actions))
+                .call(() => {
+                    // 调整泡泡位置
+                    this.onBubblePosReset(data);
+                })
+                .start();
         }
         // 填充弹夹
-        this.resetReadyBubbles()
+        this.resetReadyBubbles();
     }
 
     // 初始化游戏
@@ -158,7 +162,7 @@ export default class GameManager extends Component {
             const bubble = PoolManager.instance.getNode(`Bubble${index}`, this.bubbleRoot)
             const pos = this.bubbleBorn.getPosition()
             pos.y -= i * BUBBLE_R * 2
-            bubble.getComponent(Bubble).init(pos)
+            bubble.getComponent(Bubble).init(this.v2(pos))
             const data: IBubbleData = Object.create(null)
             data.index = index
             data.node = bubble
@@ -178,7 +182,7 @@ export default class GameManager extends Component {
         const bubble = PoolManager.instance.getNode(`Bubble${index}`, this.bubbleRoot)
         const pos = this.bubbleBorn.getPosition()
         pos.y -= 5 * BUBBLE_R * 2
-        bubble.getComponent(Bubble).init(pos)
+        bubble.getComponent(Bubble).init(this.v2(pos))
         const data: IBubbleData = Object.create(null)
         data.index = index
         data.node = bubble
@@ -186,11 +190,15 @@ export default class GameManager extends Component {
         data.isVisited = false
         DataManager.instance.readyBubbles.push(data)
         DataManager.instance.readyBubbles.forEach(item => {
-            const action = spawn(
-                scaleTo(0.05, 0.95),
-                jumpTo(0.3, new Vec2(item.node.position.x, item.node.position.y + BUBBLE_R * 2), 50, 1),
-                scaleTo(0.05, 1),
-            );
+            /* const action = tween()
+                .then(scaleTo(0.05, 0.95))
+                .then(jumpTo(0.3, new Vec2(item.node.position.x, item.node.position.y + BUBBLE_R * 2), 50, 1))
+                .then(cc.scaleTo(0.05, 1)); */
+            const action = tween(item.node)
+                .to(0.05, { scale: new Vec3(0.95, 0.95, 0.95) })
+                .by(0.3, { position: new Vec3(item.node.position.x, BUBBLE_R * 2, 0) }, { easing: 'sineOut' })
+                .to(0.05, { scale: new Vec3(1, 1, 1) })
+                .start();
             tween(item.node).then(action).start()
         })
     }
@@ -215,7 +223,7 @@ export default class GameManager extends Component {
             }
         }
         const rc: Vec2 = DataManager.instance.convertPosToRowCol(data.node.position.x, data.node.position.y)
-        data.node.setPosition(DataManager.instance.convertRowColToPos(rc.x, rc.y))
+        data.node.setPosition(this.v3(DataManager.instance.convertRowColToPos(rc.x, rc.y)))
         let obj: IBubbleData = Object.create(null);
         obj.index = data.index;
         obj.node = data.node;
@@ -300,8 +308,8 @@ export default class GameManager extends Component {
                 // 获取到该位置泡泡，执行消除
                 let b = DataManager.instance.bubbles[record[i].x][record[i].y].node;
                 b.getComponent(Bubble).onDelete(record[i]);
-                this.onEffectPlay(b.getPosition())
-                this.onEffectPlay(b.getPosition(), 'EffScore')
+                this.onEffectPlay(this.v2(b.getPosition()))
+                this.onEffectPlay(this.v2(b.getPosition()), 'EffScore')
             }
             // 悬空删除
             this.onBubbleUnLinked()
@@ -359,9 +367,9 @@ export default class GameManager extends Component {
                     flag = false;
                     const { node, index } = DataManager.instance.bubbles[row][col]
                     node.getComponent(Bubble).onDelete(new Vec2(row, col));
-                    this.onEffectPlay(node.getPosition())
-                    this.onEffectPlay(node.getPosition(), 'EffScore')
-                    this.onFallPlay(node.getPosition(), index)
+                    this.onEffectPlay(this.v2(node.getPosition()))
+                    this.onEffectPlay(this.v2(node.getPosition()), 'EffScore')
+                    this.onFallPlay(this.v2(node.getPosition()), index)
                 } else {
                     DataManager.instance.bubbles[row][col].isVisited = false;
                     DataManager.instance.bubbles[row][col].isLinked = false;
@@ -434,11 +442,18 @@ export default class GameManager extends Component {
                         pos = new Vec2(bubble.node.position.x, bubble.node.position.y - BUBBLE_Y);
 
                     }
-                    const action = spawn(
+                    /* const action = spawn(
                         scaleTo(0.05, 0.95),
                         jumpTo(0.3, pos, 50, 1),
                         scaleTo(0.05, 1)
-                    );
+                    ); */
+                    const action = tween()
+                        .to(0.05, { scale: new Vec3(0.95, 0.95, 0.95) })
+                        .by(0.3, { position: new Vec3(0, 50, 0) }, { easing: 'sineOut' }) // Nhảy lên
+                        .by(0.3, { position: new Vec3(0, -50, 0) }, { easing: 'sineIn' }) // Rơi xuống
+                        .to(0.3, { position: pos }) // Di chuyển đến vị trí cuối cùng
+                        .to(0.05, { scale: new Vec3(1, 1, 1) })
+                        .start();
                     tween(bubble.node).then(action).call(() => {
                         actionCount += 1
                         if (actionCount == bubbleCount) {
@@ -525,7 +540,7 @@ export default class GameManager extends Component {
     private onEffectPlay(pos: Vec2, name: string = 'EffCrush') {
         const effect = PoolManager.instance.getNode(name, this.bubbleEffectRoot)
         const anim = effect.getComponent(Animation)
-        effect.setPosition(pos)
+        effect.setPosition(this.v3(pos))
         anim.play(name)
         anim.on(Animation.EventType.FINISHED, () => {
             effect.destroy()
@@ -554,11 +569,16 @@ export default class GameManager extends Component {
         // 生成炸弹
         const boom = PoolManager.instance.getNode(`BubbleBoom`, this.bubbleRoot)
         boom.getComponent(Bubble).init(new Vec2(bubble.node.position.x + 200, bubble.node.position.y))
-        const action = spawn(
+        /* const action = spawn(
             scaleTo(0.05, 0.95),
             jumpTo(0.3, new Vec2(bubble.node.position.x, bubble.node.position.y), 50, 1),
             scaleTo(0.05, 1)
-        );
+        ); */
+        const action = tween(bubble.node)
+            .to(0.05, { scale: new Vec3(0.95, 0.95, 0.95) })
+            .by(0.3, { position: new Vec3(bubble.node.position.x, bubble.node.position.y, 0) }, { easing: 'sineOut' })
+            .to(0.05, { scale: new Vec3(1, 1, 1) })
+            .start();
         tween(boom).then(action).call(() => {
             bubble.node.removeFromParent()
             bubble.node = boom
@@ -572,7 +592,7 @@ export default class GameManager extends Component {
         this.scoreNum = 0
         const boom = DataManager.instance.bubbles[row][col]
         AudioManager.instance.playSound(ENUM_AUDIO_CLIP.BOMB)
-        this.onEffectPlay(boom.node.getPosition(), 'EffBoom')
+        this.onEffectPlay(this.v2(boom.node.getPosition()), 'EffBoom')
         const minRow = row - 2
         const maxRow = row + 2
         const minCol = col - 2
@@ -583,10 +603,10 @@ export default class GameManager extends Component {
                     if (DataManager.instance.bubbles?.[r]?.[c]) {
                         let { node, index } = DataManager.instance.bubbles[r][c];
                         node.getComponent(Bubble).onDelete(new Vec2(r, c));
-                        this.onEffectPlay(node.getPosition())
+                        this.onEffectPlay(this.v2(node.getPosition()))
                         if (index != 99) {
                             this.scoreNum += 1
-                            this.onEffectPlay(node.getPosition(), 'EffScore')
+                            this.onEffectPlay(this.v2(node.getPosition()), 'EffScore')
                         }
                     }
                 }
@@ -615,7 +635,7 @@ export default class GameManager extends Component {
     onItemIceEnd() {
         DataManager.instance.isIceTime = false
         StaticInstance.uiManager.toggle(ENUM_UI_TYPE.ICE, false)
-        if (this.iceTimeSoundId >= 0) {
+        if (this.iceTimeSoundId /* >= 0 */) {
             AudioManager.instance.stopSound(this.iceTimeSoundId)
         }
     }
@@ -626,5 +646,11 @@ export default class GameManager extends Component {
         EventManager.instance.off(ENUM_GAME_EVENT.ITEM_BOOM, this.onItemBoom)
         EventManager.instance.off(ENUM_GAME_EVENT.ITEM_ICE_START, this.onItemIce)
         EventManager.instance.off(ENUM_GAME_EVENT.ITEM_ICE_END, this.onItemIceEnd)
+    }
+    v2(v3: Vec3) {
+        return new Vec2(v3.x, v3.y)
+    }
+    v3(v2: Vec2) {
+        return new Vec3(v2.x, v2.y, 1);
     }
 }

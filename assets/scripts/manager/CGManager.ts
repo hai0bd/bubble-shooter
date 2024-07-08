@@ -1,11 +1,12 @@
+import { Component, _decorator } from "cc";
 import { ENUM_GAME_EVENT } from "../Enum";
 import DataManager from "./DataManager";
 import EventManager from "./EventManager";
 
-const { ccclass, property } = cc._decorator;
+const { ccclass, property } =_decorator;
 
 @ccclass
-export default class CGManager extends cc.Component {
+export default class CGManager extends Component {
 
     private static _instance: CGManager;
 

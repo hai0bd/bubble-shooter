@@ -1,8 +1,9 @@
-// Created by carolsail
+import { _decorator, Canvas, color, Component, director, Graphics, Label, Node, tween, UITransform, Vec2, Vec3 } from "cc";
 
-import { Canvas, color, director, Graphics, Label, Node, tween, UITransform, Vec3 } from "cc";
+const { ccclass, property } = _decorator;
 
-export default class ToastManager {
+@ccclass
+export default class ToastManager extends Component {
 
     private static _instance: any = null
 
@@ -25,7 +26,8 @@ export default class ToastManager {
 
         // 节点
         let bgNode = new Node();
-        bgNode.group = 'ui'
+        // bgNode.group = 'ui'
+        bgNode.layer = 1;
 
         // Lable文本格式设置
         let textNode = new Node();
@@ -88,14 +90,24 @@ export default class ToastManager {
 
         canvas.node.addChild(bgNode);
         // 执行动画
-        let finished = callFunc(function () {
+        /* let finished = callFunc(function () {
             bgNode.destroy();
-        });
-        let action = sequence(
+        }); */
+        /* let action = sequence(
             moveBy(duration, v2(0, 0)),
             fadeOut(0.3),
             finished
-        );
+        ); */
+        // const pos = this.node.position;
+        let action = tween(this.node)
+            .sequence(
+                tween().to(duration, { position: new Vec3(0, 0, 0) }), // moveBy(duration, v2(0, 0))
+                tween().to(0.3, { opacity: 0 }, { easing: 'sineOut' })  // fadeOut(0.3)
+            )
+            .call(() => {
+                bgNode.destroy;
+            })
+            .start();
         // bgNode.runAction(action); 
         tween(bgNode).then(action).start()
     }

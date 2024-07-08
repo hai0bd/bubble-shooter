@@ -1,53 +1,72 @@
-import { AudioSource } from 'cc';
+import { _decorator, Component, AudioSource, Node } from 'cc';
 import { ENUM_AUDIO_CLIP } from './../Enum';
 import DataManager from './DataManager';
-import ResourceManager from "./ResourceManager"
+import ResourceManager from "./ResourceManager";
 
-export default class AudioManager {
-    private audioSource: AudioSource = null
-    private static _instance: any = null
+const { ccclass, property } = _decorator;
 
-    static getInstance<T>(): T {
+@ccclass('AudioManager')
+export default class AudioManager extends Component {
+    @property(AudioSource)
+    private audioSource: AudioSource = null;
+
+    private static _instance: AudioManager = null;
+
+    static getInstance(): AudioManager {
         if (this._instance === null) {
-            this._instance = new this()
-            this._instance.init()
+            this._instance = new AudioManager();
+            this._instance.init();
         }
 
-        return this._instance
+        return this._instance;
     }
 
-    static get instance() {
-        return this.getInstance<AudioManager>()
+    static get instance(): AudioManager {
+        return this.getInstance();
     }
 
     init() {
-        this.audioSource = new AudioSource()
-        this.audioSource.loop = true
-        this.audioSource.volume = 0.3
+        if (!this.audioSource) {
+            this.audioSource = this.getComponent(AudioSource);
+        }
+        this.audioSource.loop = true;
+        this.audioSource.volume = 0.3;
     }
 
     async playMusic() {
-        if (!DataManager.instance.isMusicOn) return
+        if (!DataManager.instance.isMusicOn) return;
         if (this.audioSource.clip) {
-            this.audioSource.play()
-            return
+            this.audioSource.play();
+            return;
         }
-        const clip = await ResourceManager.instance.getClip(ENUM_AUDIO_CLIP.BGM)
-        this.audioSource.clip = clip
-        this.audioSource.play()
+        const clip = await ResourceManager.instance.getClip(ENUM_AUDIO_CLIP.BGM);
+        this.audioSource.clip = clip;
+        this.audioSource.play();
     }
 
     stopMusic() {
-        this.audioSource.stop()
+        this.audioSource.stop();
     }
 
     async playSound(name: ENUM_AUDIO_CLIP | string, isLoop: boolean = false) {
-        if (!DataManager.instance.isSoundOn) return
-        const clip = await ResourceManager.instance.getClip(name)
-        return audioEngine.playEffect(clip, isLoop)
+        if (!DataManager.instance.isSoundOn) return;
+        const clip = await ResourceManager.instance.getClip(name);
+
+        // Tạo một node mới hoặc sử dụng lại node hiện có cho hiệu ứng âm thanh
+        const soundNode = new Node();
+        const soundAudioSource = soundNode.addComponent(AudioSource);
+        soundAudioSource.clip = clip;
+        soundAudioSource.loop = isLoop;
+        soundAudioSource.play();
+
+        return soundAudioSource;
     }
 
-    stopSound(audioId: number) {
-        audioEngine.stopEffect(audioId)
+    stopSound(soundAudioSource: AudioSource) {
+        if (soundAudioSource) {
+            soundAudioSource.stop();
+            // Bạn có thể hủy node nếu cần thiết
+            soundAudioSource.node.destroy();
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { _decorator, Component, director, EventTouch, Graphics, Node, PhysicsSystem2D, Vec2 } from 'cc';
+import { _decorator, Component, director, ERaycast2DType, EventTouch, Graphics, Node, PhysicsSystem2D, RigidBody2D, UITransform, Vec2, Vec3 } from 'cc';
 import DataManager, { SCREEN_W, SCREEN_H, SCREEN_T } from './DataManager';
 import { ENUM_GAME_EVENT, ENUM_GAME_STATUS, ENUM_PHYCOLLIDER_TAG } from './../Enum';
 import EventManager from "./EventManager";
@@ -28,48 +28,45 @@ export default class TouchManager extends Component {
     }
 
     private onTouchStart(e: EventTouch): void {
-        // console.log(DataManager.instance.status, 'start')
         if (DataManager.instance.status != ENUM_GAME_STATUS.RUNING) {
-            this.isValidTouch = false
-            return
+            this.isValidTouch = false;
+            return;
         }
-        this.isValidTouch = true
-        // let pos = this.node.convertToNodeSpaceAR(e.getLocation());
-        // pos.x -= this.draw.node.x;
-        // pos.y -= this.draw.node.y;
-        // this.drawLine(pos);
-        this.clearLine()
-        this.curDrawLength = 0
-        DataManager.instance.bubbleMoveActions = []
-        const startLocation = this.draw.node.getPosition()
-        const location = e.getLocation()
+        this.isValidTouch = true;
+        this.clearLine();
+        this.curDrawLength = 0;
+        DataManager.instance.bubbleMoveActions = [];
+
+        const startLocation = this.draw.node.getPosition();
+        const location = e.getUILocation();  // Changed from getLocation() to getUILocation()
         const degree = this.convertToDegree(e);
-        if (degree == DataManager.instance.bubbleShootDegree
-            || degree == -DataManager.instance.bubbleShootDegree) return
-        this.drawRayCast(startLocation, location.subSelf(startLocation).normalizeSelf())
+        if (degree == DataManager.instance.bubbleShootDegree || degree == -DataManager.instance.bubbleShootDegree) return;
+
+        // Calculate the direction for the raycast
+        const direction = new Vec2(location.x - startLocation.x, location.y - startLocation.y).normalize();
+        this.drawRayCast(new Vec2(startLocation.x, startLocation.y), direction);
         this.draw.stroke();
     }
 
     private onTouchsMove(e: EventTouch): void {
         if (DataManager.instance.status != ENUM_GAME_STATUS.RUNING) {
-            this.isValidTouch = false
-            return
+            this.isValidTouch = false;
+            return;
         }
-        this.isValidTouch = true
-        // let pos = this.node.convertToNodeSpaceAR(e.getLocation());
-        // pos.x -= this.draw.node.x;
-        // pos.y -= this.draw.node.y;
-        // this.drawLine(pos);
-        this.clearLine()
-        this.curDrawLength = 0
-        DataManager.instance.bubbleMoveActions = []
-        const startLocation = this.draw.node.getPosition()
-        const location = e.getLocation()
+        this.isValidTouch = true;
+        this.clearLine();
+        this.curDrawLength = 0;
+        DataManager.instance.bubbleMoveActions = [];
+
+        const startLocation = this.draw.node.getPosition();
+        const location = e.getUILocation(); // Changed from getLocation() to getUILocation()
         const degree = this.convertToDegree(e);
-        if (degree == DataManager.instance.bubbleShootDegree
-            || degree == -DataManager.instance.bubbleShootDegree) return
-        this.drawRayCast(startLocation, location.subSelf(startLocation).normalizeSelf())
-        this.draw.stroke()
+        if (degree == DataManager.instance.bubbleShootDegree || degree == -DataManager.instance.bubbleShootDegree) return;
+
+        // Calculate the direction for the raycast
+        const direction = new Vec2(location.x - startLocation.x, location.y - startLocation.y).normalize();
+        this.drawRayCast(new Vec2(startLocation.x, startLocation.y), direction);
+        this.draw.stroke();
     }
 
     private onTouchEnd(e: EventTouch): void {
@@ -87,56 +84,64 @@ export default class TouchManager extends Component {
 
     // 角度转化
     private convertToDegree(e: EventTouch): number {
-        const pos: Vec2 = e.getLocation();
-        const x = pos.x - this.draw.node.x;
-        const y = pos.y - this.draw.node.y;
+        const pos: Vec2 = e.getUILocation(); // Changed from getLocation() to getUILocation()
+        const uiTransform = this.draw.node.getComponent(UITransform);
+        const nodePos = uiTransform.convertToNodeSpaceAR(new Vec3(pos.x, pos.y, 0)); // Convert world coordinates to node space
+
+        const x = nodePos.x - this.draw.node.position.x;
+        const y = nodePos.y - this.draw.node.position.y;
         const radian = Math.atan2(y, x);
-        // 弧度转角度 0 - 2π -> 0 - 360
-        let degree = misc.radiansToDegrees(radian);
-        // angle与rotation差90
+
+        // Convert radians to degrees (0 - 2π -> 0 - 360)
+        let degree = radian * 180 / Math.PI;
+        // Adjust the angle
         degree -= 90;
-        if (degree < -DataManager.instance.bubbleShootDegree
-            && degree > -180) degree = -DataManager.instance.bubbleShootDegree;
-        if (degree > DataManager.instance.bubbleShootDegree
-            || degree <= -180) degree = DataManager.instance.bubbleShootDegree;
+
+        const bubbleShootDegree = DataManager.instance.bubbleShootDegree;
+
+        if (degree < -bubbleShootDegree && degree > -180) {
+            degree = -bubbleShootDegree;
+        }
+        if (degree > bubbleShootDegree || degree <= -180) {
+            degree = bubbleShootDegree;
+        }
+
         return degree;
     }
 
     // 绘画瞄准线(废弃)
-    drawLine(pos: Vec2) {
+    private drawLine(pos: Vec2) {
         this.draw.clear();
-        let lineLength = SCREEN_H - SCREEN_T - Math.abs(this.draw.node.y);
+
+        // Screen dimensions (assumed constants)
+        const SCREEN_W = 1920; // Replace with actual screen width
+        const SCREEN_H = 1080; // Replace with actual screen height
+        const SCREEN_T = 0;    // Replace with actual screen top position
+
+        let lineLength = SCREEN_H - SCREEN_T - Math.abs(this.draw.node.position.y);
         let k = pos.y / pos.x;
-        // 预计到达的边界点
+
+        // Initialize variables
         let point = new Vec2(0, 0);
-        // 画笔到起始点
-        this.draw.moveTo(0, 0);
         let b = 0;
         let x: number, y: number;
-        // 算一下 b 的增长值
         let d_b = (k > 0 ? SCREEN_W / 2 : -SCREEN_W / 2) * k;
-        // 起始标志
         let isRebound = false;
+
         while (true) {
-            // 如果到墙，求与墙的交点
             x = k > 0 ? SCREEN_W / 2 : -SCREEN_W / 2;
-            // 一元函数 y = k·x + b
             y = k * x + b;
-            // 到达墙壁所需长度
-            let l = new Vec2(x, y).subtract(point).mag();
-            // 判断能否到墙
+
+            let l = new Vec2(x, y).subtract(point).length(); // Use length() instead of mag()
+
             if (l < lineLength) {
                 isRebound = true;
-                // 扣去已经过长度
                 lineLength -= l;
                 this.draw.lineTo(x, y);
-                // 更改下一轮循环起始点
-                point.x = x;
-                point.y = y;
+                point.set(x, y);
                 b = y + d_b;
                 k *= -1;
             } else {
-                // 如果不能到墙，分为两种情况，需要一个标志
                 if (isRebound) {
                     let l_k = lineLength / l;
                     let r_x = SCREEN_W * l_k;
@@ -147,14 +152,15 @@ export default class TouchManager extends Component {
                     let r_x = SCREEN_W / 2 * l_k;
                     x = k > 0 ? r_x : -r_x;
                     y = k * x;
-                    // 中心处理
-                    if (x > -0.05 && x < 0.05)
+
+                    if (Math.abs(x) < 0.05)
                         y = lineLength;
                 }
                 this.draw.lineTo(x, y);
                 break;
             }
         }
+
         this.draw.stroke();
     }
 
@@ -163,7 +169,7 @@ export default class TouchManager extends Component {
      * @param startLocation 起始位置 世界坐标系
      * @param vector_dir 单位方向向量
      */
-    private drawRayCast(startLocation: Vec2, vector_dir: Vec2) {
+    /* private drawRayCast(startLocation: Vec2, vector_dir: Vec2) {
         // 剩余长度
         const left_length = 10000;
         if (left_length <= 0) return;
@@ -202,14 +208,66 @@ export default class TouchManager extends Component {
             // 画剩余线段
             this.drawAimLine(startLocation, endLocation);
         }
+    } */
+
+    private drawRayCast(startLocation: Vec2, vector_dir: Vec2) {
+        // Remaining length
+        const left_length = 10000;
+        if (left_length <= 0) return;
+
+        // Calculate the endpoint of the line
+        const endLocation = startLocation.add(vector_dir.multiplyScalar(left_length));
+
+        // Raycast test
+        const results = PhysicsSystem2D.instance.raycast(startLocation, endLocation, ERaycast2DType.Closest);
+        if (results.length > 0) {
+            const result = results[0];
+            const point = result.point; // Intersection point with the collider
+
+            // Draw the aim line
+            this.drawAimLine(startLocation, point);
+
+            // Calculate the length
+            const line_length = point.subtract(startLocation).length();
+
+            // Calculate the drawn length
+            this.curDrawLength += line_length;
+
+            // Normal vector at the intersection point
+            const vector_n = result.normal;
+
+            // Incident vector
+            const vector_i = vector_dir;
+
+            // Reflective vector
+            const vector_r = vector_i.subtract(vector_n.multiplyScalar(2 * vector_i.dot(vector_n)));
+
+            // Bubble movement action
+            const move = new RigidBody2D().linearVelocity = vector_i.multiplyScalar(line_length / DataManager.instance.bubbleSpeed);
+            DataManager.instance.bubbleMoveActions.push(move);
+
+            // Handle left-right cutting situations
+            if (result.collider.tag == ENUM_PHYCOLLIDER_TAG.TARGET) {
+                DataManager.instance.bubbleShootVector = vector_i;
+            }
+
+            // Continue calculating the next segment
+            if (result.collider.tag == ENUM_PHYCOLLIDER_TAG.TURN) {
+                this.drawRayCast(point, vector_r);
+            }
+        } else {
+            // Draw the remaining line segment
+            this.drawAimLine(startLocation, endLocation);
+        }
     }
+
 
     /**
      * @description 画瞄准线(虚线)
      * @param startLocation 起始位置 世界坐标系
      * @param endLocation 结束位置 世界坐标系
      */
-    private drawAimLine(startLocation: Vec2, endLocation: Vec2) {
+    /* private drawAimLine(startLocation: Vec2, endLocation: Vec2) {
         // 转换坐标
         const graphic_startLocation = this.draw.node.convertToNodeSpaceAR(startLocation);
         this.draw.moveTo(graphic_startLocation.x, graphic_startLocation.y);
@@ -226,10 +284,43 @@ export default class TouchManager extends Component {
             graphic_startLocation.addSelf(vector_dir)
             this.draw.circle(graphic_startLocation.x, graphic_startLocation.y, 2);
         }
+    } */
+
+    private drawAimLine(startLocation: Vec2, endLocation: Vec2) {
+        // Convert coordinates from Vec2 to Vec3
+        const worldStartLocation = new Vec3(startLocation.x, startLocation.y, 0);
+        const graphic_startLocation = new Vec3();
+        const uiTransform = this.draw.node.getComponent(UITransform);
+
+        if (uiTransform) {
+            uiTransform.convertToNodeSpaceAR(worldStartLocation, graphic_startLocation);
+        }
+
+        this.draw.moveTo(graphic_startLocation.x, graphic_startLocation.y);
+
+        // Draw small circles
+        const delta = 20; // Interval
+        let vector_dir = new Vec3(endLocation.x - startLocation.x, endLocation.y - startLocation.y, 0);
+        const total_count = Math.round(vector_dir.length() / delta); // Number of circles
+        vector_dir = vector_dir.normalize().multiplyScalar(delta); // Interval vector
+
+        for (let index = 0; index < total_count; index++) {
+            graphic_startLocation.add(vector_dir);
+            this.draw.circle(graphic_startLocation.x, graphic_startLocation.y, 2);
+        }
+
+        this.draw.stroke();
     }
 
     // 清除画线
     private clearLine() {
         this.draw.clear()
     }
+
+    /* v2(v3: Vec3) {
+        return new Vec2(v3.x, v3.y);
+    }
+    v3(v2: Vec2) {
+        return new Vec3(v2.x, v2.y, 1);
+    } */
 }
