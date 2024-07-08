@@ -31,15 +31,15 @@ export default class Index extends Component {
         // 读档
         DataManager.instance.restore()
         // 播放音乐
-        AudioManager.instance.playMusic()
+        // AudioManager.instance.playMusic()
         // 加载sdk
-        SdkManager.instance.passiveShare()
+        /* SdkManager.instance.passiveShare()
         SdkManager.instance.getRank()
         SdkManager.instance.initBannerAd()
         SdkManager.instance.initInterstitialAd()
-        SdkManager.instance.initVideoAd()
+        SdkManager.instance.initVideoAd() */
         // 操作ui
-        StaticInstance.uiManager.toggle(ENUM_UI_TYPE.MENU)
+        StaticInstance.uiManager.toggle(ENUM_UI_TYPE.MENU);
     }
 
     onResize() {

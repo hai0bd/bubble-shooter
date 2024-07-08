@@ -98,11 +98,13 @@ export default class ToastManager extends Component {
             fadeOut(0.3),
             finished
         ); */
+
+
         // const pos = this.node.position;
         let action = tween(this.node)
             .sequence(
-                tween().to(duration, { position: new Vec3(0, 0, 0) }), // moveBy(duration, v2(0, 0))
-                tween().to(0.3, { opacity: 0 }, { easing: 'sineOut' })  // fadeOut(0.3)
+                tween(this.node).to(duration, { position: new Vec3(0, 0, 0) }), // moveBy(duration, v2(0, 0))
+                // tween(this.node).to(0.3, { opacity: 0 }, { easing: 'sineOut' })  // fadeOut(0.3)
             )
             .call(() => {
                 bgNode.destroy;

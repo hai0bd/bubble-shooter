@@ -31,9 +31,13 @@ export default class UIManager extends Component {
 
     toggle(key: ENUM_UI_TYPE, status: boolean = true, callback?: () => void) {
         if (this.uiMap.has(key)) {
+            console.log("has key")
             const layer = this.uiMap.get(key)
             status ? layer.show() : layer.hide()
             callback && callback()
+        }
+        else {
+            console.log("hasn't key");
         }
     }
 

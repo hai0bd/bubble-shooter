@@ -2679,9 +2679,15 @@
     "__prefab": {
       "__id__": 114
     },
-    "level": null,
-    "score": null,
-    "propsNode": null,
+    "level": {
+      "__id__": 13
+    },
+    "score": {
+      "__id__": 29
+    },
+    "propsNode": {
+      "__id__": 32
+    },
     "_id": ""
   },
   {

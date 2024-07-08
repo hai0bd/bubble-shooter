@@ -125,6 +125,7 @@ export default class DataManager {
     }
 
     reset() {
+        // this.resetData();
         this.status = ENUM_GAME_STATUS.UNRUNING
         this.bubbles = []
         this.readyBubbles = []
@@ -143,6 +144,9 @@ export default class DataManager {
             maxScore: this.maxScore,
             skillNums: this.skillNums
         }))
+    }
+    resetData() {
+        sys.localStorage.clear();
     }
 
     restore() {

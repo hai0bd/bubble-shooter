@@ -24,28 +24,28 @@ export default class ResourceManager {
         return this.getInstance<ResourceManager>()
     }
 
-    public async loadRes(resource: any, ratio: number = 0){
-        return new Promise<void>((resolve, reject)=>{
+    public async loadRes(resource: any, ratio: number = 0) {
+        return new Promise<void>((resolve, reject) => {
             const rate = DataManager.instance.loadingRate
-            resources.loadDir(resource.path, resource.type, (finished: number, total: number)=>{
+            resources.loadDir(resource.path, resource.type, (finished: number, total: number) => {
                 // 资源加载进度
-               if(ratio > 0) DataManager.instance.loadingRate = Math.max(rate + ratio * finished / total, DataManager.instance.loadingRate)
-            }, (err, assets)=>{
-                if(err) reject && reject()
+                if (ratio > 0) DataManager.instance.loadingRate = Math.max(rate + ratio * finished / total, DataManager.instance.loadingRate)
+            }, (err, assets) => {
+                if (err) reject && reject()
                 let asset: any
-                if(resource == ENUM_RESOURCE_TYPE.AUDIO){
+                if (resource == ENUM_RESOURCE_TYPE.AUDIO) {
                     for (let i = 0; i < assets.length; i++) {
                         asset = assets[i];
                         if (!this.clipMap[asset.name]) this.clipMap[asset.name] = asset
                     }
                 }
-                if(resource == ENUM_RESOURCE_TYPE.PREFAB){
+                if (resource == ENUM_RESOURCE_TYPE.PREFAB) {
                     for (let i = 0; i < assets.length; i++) {
                         asset = assets[i];
                         PoolManager.instance.setPrefab(asset.data.name, asset)
                     }
                 }
-                if(resource == ENUM_RESOURCE_TYPE.SPRITE){
+                if (resource == ENUM_RESOURCE_TYPE.SPRITE) {
                     for (let i = 0; i < assets.length; i++) {
                         asset = assets[i];
                         if (!this.spriteMap[asset.name]) this.spriteMap[asset.name] = asset
@@ -60,7 +60,7 @@ export default class ResourceManager {
         return this.clipMap[name]
     }
 
-    public getSprite(name: string){
+    public getSprite(name: string) {
         return this.spriteMap[name]
     }
 }

@@ -63,7 +63,12 @@ export default class MainLayer extends BaseLayer {
     setPropNum() {
         this.propsNode.children.forEach((prop, index) => {
             const nums = prop.getChildByName('num')
-            nums.getChildByName('label').getComponent(Label).string = `${DataManager.instance.skillNums[index]}`
+            if (nums) {
+                nums.getChildByName('Label').getComponent(Label).string = `${DataManager.instance.skillNums[index]}`
+            }
+            else {
+                console.log("none num");
+            }
         })
     }
 

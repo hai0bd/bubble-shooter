@@ -26,30 +26,30 @@ export default class AudioManager extends Component {
     }
 
     init() {
-        if (!this.audioSource) {
+        /* if (!this.audioSource) {
             this.audioSource = this.getComponent(AudioSource);
         }
         this.audioSource.loop = true;
-        this.audioSource.volume = 0.3;
+        this.audioSource.volume = 0.3; */
     }
 
     async playMusic() {
-        if (!DataManager.instance.isMusicOn) return;
+        /* if (!DataManager.instance.isMusicOn) return;
         if (this.audioSource.clip) {
             this.audioSource.play();
             return;
         }
         const clip = await ResourceManager.instance.getClip(ENUM_AUDIO_CLIP.BGM);
         this.audioSource.clip = clip;
-        this.audioSource.play();
+        this.audioSource.play(); */
     }
 
     stopMusic() {
-        this.audioSource.stop();
+        // this.audioSource.stop();
     }
 
     async playSound(name: ENUM_AUDIO_CLIP | string, isLoop: boolean = false) {
-        if (!DataManager.instance.isSoundOn) return;
+       /*  if (!DataManager.instance.isSoundOn) return;
         const clip = await ResourceManager.instance.getClip(name);
 
         // Tạo một node mới hoặc sử dụng lại node hiện có cho hiệu ứng âm thanh
@@ -59,14 +59,14 @@ export default class AudioManager extends Component {
         soundAudioSource.loop = isLoop;
         soundAudioSource.play();
 
-        return soundAudioSource;
+        return soundAudioSource; */
     }
 
     stopSound(soundAudioSource: AudioSource) {
-        if (soundAudioSource) {
+        /* if (soundAudioSource) {
             soundAudioSource.stop();
             // Bạn có thể hủy node nếu cần thiết
             soundAudioSource.node.destroy();
-        }
+        } */
     }
 }

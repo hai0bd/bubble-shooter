@@ -44,14 +44,13 @@ export default class GameManager extends Component {
 
     // 开始游戏
     onGameStart() {
-        DataManager.instance.reset()
-        this.bubbleRoot.removeAllChildren()
-        this.initGame()
+        DataManager.instance.reset();
+        this.bubbleRoot.removeAllChildren();
+        this.initGame();
     }
 
     onBallShoot() {
         if (DataManager.instance.readyBubbles.length <= 0) {
-            // console.log('弹夹已空')
             return;
         }
         this.scoreNum = 0;
@@ -61,6 +60,7 @@ export default class GameManager extends Component {
         const data = DataManager.instance.readyBubbles.shift();
         // 移动泡泡
         const actions = DataManager.instance.bubbleMoveActions;
+        console.log('actions: ', DataManager.instance.bubbleMoveActions);
         // console.log(actions)
         if (actions.length === 1) {
             tween(data.node)
@@ -71,10 +71,10 @@ export default class GameManager extends Component {
                 })
                 .start();
         } else {
-            tween(data.node)
-                .then(tween().sequence(...actions))
+            let combinedAction = actions.reduce((prev, curr) => prev.then(curr), tween(data.node));
+            combinedAction
                 .call(() => {
-                    // 调整泡泡位置
+                    // 调整泡泡位
                     this.onBubblePosReset(data);
                 })
                 .start();
@@ -85,43 +85,43 @@ export default class GameManager extends Component {
 
     // 初始化游戏
     initGame() {
-        if (!this.bubbleRoot || !this.bubbleBorn) return
+        if (!this.bubbleRoot || !this.bubbleBorn) return;
         if (DataManager.instance.level > Levels.length) {
-            DataManager.instance.level = Levels.length
-            DataManager.instance.save()
+            DataManager.instance.level = Levels.length;
+            DataManager.instance.save();
         }
-        DataManager.instance.status = ENUM_GAME_STATUS.UNRUNING
+        DataManager.instance.status = ENUM_GAME_STATUS.UNRUNING;
         // 当前关卡
         this.currentLevel = Levels[DataManager.instance.level - 1];
         // 场景泡泡
-        this.initBubbles()
+        this.initBubbles();
         // 待机泡泡组
-        this.initReadyBubbles()
+        this.initReadyBubbles();
         // 初始化参数
-        this.scoreNum = 0
-        this.canWarning = true
-        DataManager.instance.isIceTime = false
+        this.scoreNum = 0;
+        this.canWarning = true;
+        DataManager.instance.isIceTime = false;
         // ui设置
-        StaticInstance.uiManager.toggle(ENUM_UI_TYPE.ICE, false)
-        StaticInstance.uiManager.setMainLevelLabel()
-        StaticInstance.uiManager.setMainScoreLabel()
+        StaticInstance.uiManager.toggle(ENUM_UI_TYPE.ICE, false);
+        StaticInstance.uiManager.setMainLevelLabel();
+        StaticInstance.uiManager.setMainScoreLabel();
         StaticInstance.uiManager.setMainPropNum()
-        // 声音状态
-        AudioManager.instance.playSound(ENUM_AUDIO_CLIP.BEGIN)
-        DataManager.instance.status = ENUM_GAME_STATUS.RUNING
+        // 声音状态;
+        AudioManager.instance.playSound(ENUM_AUDIO_CLIP.BEGIN);
+        DataManager.instance.status = ENUM_GAME_STATUS.RUNING;
     }
 
     // 初始化场景泡泡
     initBubbles() {
         // 关卡数据
-        const data = this.currentLevel['data']
+        const data = this.currentLevel['data'];;
         if (data.length) {
             // 将所有数据遍历，0代表空
 
             for (let row = 0; row < data.length; row++) {
-                const arr = new Array(data[row].length)
+                const arr = new Array(data[row].length);
 
-                arr.fill(null)
+                arr.fill(null);
 
                 DataManager.instance.bubbles[row] = arr;
 
@@ -129,25 +129,29 @@ export default class GameManager extends Component {
                     let index = data[row][col];
 
                     if (index === 0) {
-                        DataManager.instance.bubbles[row][col] = null
-                        continue
+                        DataManager.instance.bubbles[row][col] = null;
+                        continue;
                     }
                     const bubble: Node = PoolManager.instance.getNode(`Bubble${index}`, this.bubbleRoot)
                     // 行列转坐标
                     const pos = DataManager.instance.convertRowColToPos(row, col);
                     bubble.getComponent(Bubble).init(pos);
-                    let obj: IBubbleData = Object.create(null);
-                    obj.index = index;
-                    obj.node = bubble;
-                    obj.isLinked = false;
-                    obj.isVisited = false;
+                    let obj: IBubbleData = {
+                        index: index,
+                        node: bubble,
+                        isLinked: false,
+                        isVisited: false
+                    };
                     DataManager.instance.bubbles[row][col] = obj;
+                    // console.log(DataManager.instance.bubbles[0][0]);
+                    // const temp = DataManager.instance.bubbles[row][col];
+                    // console.log("row: " + row + "col: " + col);
                 }
             }
         } else {
-            const arr = new Array(BUBBLE_NUM_0)
-            arr.fill(null)
-            DataManager.instance.bubbles[0] = arr
+            const arr = new Array(BUBBLE_NUM_0);
+            arr.fill(null);
+            DataManager.instance.bubbles[0] = arr;
         }
     }
 
@@ -179,15 +183,21 @@ export default class GameManager extends Component {
         if (ready && ready.length) {
             index = ready[random(0, ready.length - 1)]
         }
-        const bubble = PoolManager.instance.getNode(`Bubble${index}`, this.bubbleRoot)
+        const bubble = PoolManager.instance.getNode(`Bubble${index}`, this.bubbleRoot);
         const pos = this.bubbleBorn.getPosition()
         pos.y -= 5 * BUBBLE_R * 2
         bubble.getComponent(Bubble).init(this.v2(pos))
-        const data: IBubbleData = Object.create(null)
+        /* const data: IBubbleData = Object.create(null)
         data.index = index
         data.node = bubble
         data.isLinked = false
-        data.isVisited = false
+        data.isVisited = false */
+        const data: IBubbleData = {
+            index: index,
+            node: bubble,
+            isLinked: false,
+            isVisited: false
+        }
         DataManager.instance.readyBubbles.push(data)
         DataManager.instance.readyBubbles.forEach(item => {
             /* const action = tween()
@@ -196,39 +206,47 @@ export default class GameManager extends Component {
                 .then(cc.scaleTo(0.05, 1)); */
             const action = tween(item.node)
                 .to(0.05, { scale: new Vec3(0.95, 0.95, 0.95) })
-                .by(0.3, { position: new Vec3(item.node.position.x, BUBBLE_R * 2, 0) }, { easing: 'sineOut' })
+                .to(0.3, { position: new Vec3(item.node.position.x, BUBBLE_R * 2, 0) }, { easing: 'sineOut' })
                 .to(0.05, { scale: new Vec3(1, 1, 1) })
                 .start();
-            tween(item.node).then(action).start()
+            // tween(item.node).then(action).start()
         })
     }
 
     // 调整泡泡位置
     private onBubblePosReset(data: IBubbleData): void {
         // 扩展行
-        if (DataManager.instance.bubbles[DataManager.instance.bubbles.length - 1]) {
-            let hasValidData = false
-            const temp = DataManager.instance.bubbles[DataManager.instance.bubbles.length - 1]
+        const temp = DataManager.instance.bubbles[DataManager.instance.bubbles.length - 1];
+        if (temp) {
+            let hasValidData = false;
             for (let i = 0; i < temp.length; i++) {
-                if (temp[i]) {
-                    hasValidData = true
-                    break
+                if (temp[i] != null) {
+                    hasValidData = true;
+                    break;
                 }
             }
             if (hasValidData) {
-                let arr = new Array(BUBBLE_NUM_0)
-                if (temp.length == BUBBLE_NUM_0) arr = new Array(BUBBLE_NUM_1)
-                arr.fill(null)
-                DataManager.instance.bubbles.push(arr)
+                console.log("don't have temp");
+                let arr = new Array(BUBBLE_NUM_0);
+                if (temp.length == BUBBLE_NUM_0) arr = new Array(BUBBLE_NUM_1);
+                arr.fill(null);
+                DataManager.instance.bubbles.push(arr);
             }
         }
-        const rc: Vec2 = DataManager.instance.convertPosToRowCol(data.node.position.x, data.node.position.y)
-        data.node.setPosition(this.v3(DataManager.instance.convertRowColToPos(rc.x, rc.y)))
-        let obj: IBubbleData = Object.create(null);
-        obj.index = data.index;
-        obj.node = data.node;
-        obj.isLinked = false;
-        obj.isVisited = false;
+        // Chuyển đổi vị trí từ `data.node.position` sang hàng và cột
+        const rc: Vec2 = DataManager.instance.convertPosToRowCol(data.node.position.x, data.node.position.y);
+
+        // Chuyển đổi hàng và cột trở lại vị trí và thiết lập vị trí của node
+        const newPos: Vec2 = DataManager.instance.convertRowColToPos(rc.x, rc.y);
+        data.node.setPosition(new Vec3(newPos.x, newPos.y, 1));
+
+        // Tạo đối tượng IBubbleData và thêm vào mảng `bubbles`
+        let obj: IBubbleData = {
+            index: data.index,
+            node: data.node,
+            isLinked: false,
+            isVisited: false
+        };
         DataManager.instance.bubbles[rc.x][rc.y] = obj;
         // 检索相同泡泡
         this.onBubbleSearch(rc);
@@ -626,7 +644,7 @@ export default class GameManager extends Component {
         // 扣技能点
         DataManager.instance.cutSkillNums(0)
         StaticInstance.uiManager.setMainPropNum()
-        this.iceTimeSoundId = await AudioManager.instance.playSound(ENUM_AUDIO_CLIP.TIMER, true)
+        // this.iceTimeSoundId = await AudioManager.instance.playSound(ENUM_AUDIO_CLIP.TIMER, true)
         DataManager.instance.isIceTime = true
         StaticInstance.uiManager.toggle(ENUM_UI_TYPE.ICE)
     }

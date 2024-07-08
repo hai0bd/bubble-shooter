@@ -67,8 +67,8 @@ export const ENUM_RESOURCE_TYPE = ({
 
 // 射线检测
 export enum ENUM_PHYCOLLIDER_TAG {
-    TARGET, // 目标（顶部墙体和泡泡）
-    TURN, // 转向
-    WARING, // 警告
-    DEAD // 死亡
+    TARGET = 0, // 目标（顶部墙体和泡泡）
+    TURN = 1, // 转向
+    WARING = 2, // 警告
+    DEAD = 3 // 死亡
 }   
